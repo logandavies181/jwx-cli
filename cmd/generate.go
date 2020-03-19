@@ -2,63 +2,79 @@ package cmd
 
 import (
 	"fmt"
-	"encoding/json"
-	"bytes"
+	"os"
+	//"io/ioutil"
+	//"encoding/json"
+	//"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 
 	"github.com/spf13/cobra"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwt"
-	"github.com/lestrrat-go/jwx/jws"
+	//"github.com/lestrrat-go/jwx/jws"
 )
 
-// generateCmd represents the generate command
-var generateCmd = &cobra.Command{
-	Use:   "generate",
-	Short: "Generate a jwt",
-	Run: func(cmd *cobra.Command, args []string) {
-		jwtGenerateMain()
-	},
-}
-var attr map[string]string
+var (
+	generateCmd = &cobra.Command{
+		Use:   "generate",
+		Short: "Generate a jwt",
+		Run: func(cmd *cobra.Command, args []string) {
+			jwtGenerateMain()
+		},
+	}
+	
+	attr map[string]string
+	sign bool
+)
 
 func init() {
 	jwtCmd.AddCommand(generateCmd)
 
-	generateCmd.Flags().StringToStringVarP(&attr,"attr", "a", make(map[string]string) ,"List of key-value pairs to add to payload e.g. 'sub=foo,iss=bar")
+	generateCmd.Flags().StringToStringVarP(&attr, "attr", "a", make(map[string]string), "List of key-value pairs to add to payload e.g. 'sub=foo,iss=bar")
+	generateCmd.Flags().BoolVarP(&sign, "sign", "s", true, "Sign the payload or not")
 }
 
 func jwtGenerateMain() {
 	tok := jwt.New()
 
-	for k,v := range(attr) {
-		tok.Set(k,v)
+	for k, v := range attr {
+		tok.Set(k, v)
 	}
 
-	b1,b2,b3,err := jws.SplitCompact(bytes.NewReader(tok))
-	buf, err := json.MarshalIndent(tok, "", "  ")
-	if err != nil {
-		fmt.Printf("failed to generate JSON: %s\n", err)
-		return
-	}
+	// Add named other attributes here
 
-	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		fmt.Printf("failed to generate private key: %s\n", err)
-		return
+	if sign {
+		signGeneratedJWT(tok)
 	}
+}
+
+func signGeneratedJWT(tok *jwt.Token) {
 	var payload []byte
-	payload, err = tok.Sign(jwa.RS256, privKey)
-	if err != nil {
-		fmt.Printf("failed to generate signed payload: %s\n", err)
-		return
+	if key == "" {
+		// We assume RSA here. Users can generate their own key if they want a different one
+		privKey, err := rsa.GenerateKey(rand.Reader, keyLen)
+		if err != nil {
+			panic(fmt.Sprintf("failed to generate private key: %s\n", err))
+		}
+		payload, err = tok.Sign(jwa.RS256, privKey)
+		if err != nil {
+			panic(fmt.Sprintf("failed to generate signed payload: %s\n", err))
+		}
 	}
-	fmt.Printf("%s",payload)
-	fmt.Printf("%s\n", buf)
-	//b1,b2,b3,err := jws.SplitCompact(bytes.NewReader(payload))
-	if err != nil {
-		fmt.Println(err)
+	// Logic for user provided key here
+
+	// Check output filename
+	var printFile *os.File
+	if outputFile != "" {
+		printFilePtr, err := os.OpenFile(outputFile, os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			panic(err)
+		}
+		printFile = printFilePtr
+	} else {
+		printFile = os.Stdout
 	}
-	fmt.Println(string(b1),string(b2),string(b3))
+
+	fmt.Fprintln(printFile, string(payload))
 }
