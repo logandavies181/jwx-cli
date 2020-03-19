@@ -75,6 +75,11 @@ func signGeneratedJWT(tok *jwt.Token) {
 	} else {
 		printFile = os.Stdout
 	}
-
-	fmt.Fprintln(printFile, string(payload))
+	
+	if decode {
+		decodedJWT := decodeSignedJWT(payload)
+		fmt.Fprintln(printFile, decodedJWT)
+	} else {
+		fmt.Fprintln(printFile, string(payload))
+	}
 }

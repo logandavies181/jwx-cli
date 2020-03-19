@@ -15,6 +15,7 @@ var (
 	key        string
 	keyLen     int
 	outputFile string
+	decode bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -51,7 +52,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jwx-cli.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&key, "key", "k", "", "Key for signing. Only valid with --sign")
 	rootCmd.PersistentFlags().IntVarP(&keyLen, "len", "l", 2048, "Key length if key is being generated. Only valid with --sign")
-	rootCmd.PersistentFlags().StringVarP(&outputFile, "file", "f", "", "File to output to. Default STDOUT")
+	rootCmd.PersistentFlags().StringVarP(&outputFile, "out", "o", "", "File to output to. Default STDOUT")
+	rootCmd.PersistentFlags().BoolVarP(&decode, "decode", "d", false, "Decode printed JWTs. Default false")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
