@@ -1,17 +1,17 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
+	//"fmt"
+	//"os"
 	//"io/ioutil"
 	//"encoding/json"
 	//"bytes"
-	"crypto/rand"
-	"crypto/rsa"
+	//"crypto/rand"
+	//"crypto/rsa"
 
-	"github.com/spf13/cobra"
-	"github.com/lestrrat-go/jwx/jwa"
+	//"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/spf13/cobra"
 	//"github.com/lestrrat-go/jwx/jws"
 )
 
@@ -23,7 +23,7 @@ var (
 			jwtGenerateMain()
 		},
 	}
-	
+
 	attr map[string]string
 	sign bool
 )
@@ -36,19 +36,33 @@ func init() {
 }
 
 func jwtGenerateMain() {
-	tok := jwt.New()
+	tok := internalJwt{unsigned: jwt.New()}
 
 	for k, v := range attr {
-		tok.Set(k, v)
+		tok.unsigned.Set(k, v)
 	}
 
 	// Add named other attributes here
 
 	if sign {
-		signGeneratedJWT(tok)
+		signingKey, err := getKey()
+		if err != nil {
+			exit(err)
+		}
+
+		err = tok.sign(signingKey)
+		if err != nil {
+			exit(err)
+		}
+	}
+
+	err := tok.writeJwt()
+	if err != nil {
+		exit(err)
 	}
 }
 
+/*
 func signGeneratedJWT(tok *jwt.Token) {
 	var payload []byte
 	if key == "" {
@@ -75,11 +89,11 @@ func signGeneratedJWT(tok *jwt.Token) {
 	} else {
 		printFile = os.Stdout
 	}
-	
+
 	if decode {
 		decodedJWT := decodeSignedJWT(payload)
 		fmt.Fprintln(printFile, decodedJWT)
 	} else {
 		fmt.Fprintln(printFile, string(payload))
 	}
-}
+}*/
