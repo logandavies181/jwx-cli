@@ -43,7 +43,8 @@ func (j *internalJwt) writeJwt() error {
 	// Check output filename
 	var printFile *os.File
 	if outputFile != "" {
-		printFilePtr, err := os.OpenFile(outputFile, os.O_RDWR|os.O_CREATE, 0644)
+		printFilePtr, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+		defer printFilePtr.Close()
 		if err != nil {
 			return &jwtCliError{reason: fmt.Sprintln(err)}
 		}

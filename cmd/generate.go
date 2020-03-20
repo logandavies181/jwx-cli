@@ -31,7 +31,7 @@ var (
 func init() {
 	jwtCmd.AddCommand(generateCmd)
 
-	generateCmd.Flags().StringToStringVarP(&attr, "attr", "a", make(map[string]string), "List of key-value pairs to add to payload e.g. 'sub=foo,iss=bar")
+	generateCmd.Flags().StringToStringVarP(&attr, "attr", "a", make(map[string]string), "List of key-value pairs to add to payload e.g. 'sub=foo,iss=bar'")
 	generateCmd.Flags().BoolVarP(&sign, "sign", "s", true, "Sign the payload or not")
 }
 
