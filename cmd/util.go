@@ -6,7 +6,9 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/dvsekhvalnov/jose2go/base64url"
@@ -70,12 +72,6 @@ func (j *internalJwt) writeJwt() error {
 	return &jwtCliError{reason: "Error writing JWT"}
 }
 
-/*
-func getOutputFile() (*os.File, error) {
-	// TODO
-	return os.Stdout, nil
-}*/
-
 func (j *internalJwt) sign(k *jwtCliKey) error {
 	if j.signed != nil {
 		return &jwtCliError{reason: "Internal error: JWT is alread signed"}
@@ -90,9 +86,27 @@ func (j *internalJwt) sign(k *jwtCliKey) error {
 
 // Gets the key from the filesystem or generates one
 func getKey() (*jwtCliKey, error) {
-	// TODO cover the user provided key case
+	// TODO allow non-pem format
 	if key != "" {
-		return nil, &jwtCliError{reason: "not implemented"}
+		keyFile, err := os.Open(key)
+		if err != nil {
+			return nil, err
+		}
+		dat, err := ioutil.ReadAll(keyFile)
+		if err != nil {
+			return nil, err
+		}
+
+		keyBlock, _ := pem.Decode(dat)
+		if keyBlock == nil { // TODO: check that it's not a pubkey
+			return nil, &jwtCliError{reason: "No valid private key found in PEM"}
+		}
+		//TODO TODO TODO parse x509
+		privateKey, err := x509.Parse
+
+		// TODO don't assume RSA
+		return &jwtCliKey{ privateKey: keyBlock.Bytes, alg: jwa.RS512 }, nil
+
 	}
 	generatedKey, err := rsa.GenerateKey(rand.Reader, keyLen)
 	if err != nil {
