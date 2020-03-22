@@ -11,20 +11,31 @@ var verifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Verify a jwt",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("verify called")
+		jwtVerifyMain()
 	},
 }
+
+var (
+	jwkFile string
+	jwkURL string
+	//isJWKS bool
+)
 
 func init() {
 	jwtCmd.AddCommand(verifyCmd)
 
-	// Here you will define your flags and configuration settings.
+        verifyCmd.Flags().StringVarP(&jwkFile, "file", "f", "", "Filename to read JWK from")
+        verifyCmd.Flags().StringVarP(&jwkURL, "url", "u", "", "HTTP address to read JWK from")
+        //verifyCmd.Flags().BoolVarP(&isJWKS, "jwks", "", false, "Whether the retrieved JWK is a JWKS")
+}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// verifyCmd.PersistentFlags().String("foo", "", "A help for foo")
+func jwtVerifyMain() {
+	// TODO: allow private key verification
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// verifyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	if keyFile != "" && jwkFile != "" && jwkURL != "" {
+		exit(&jwxCliError{reason: "Can only specify one option from key, file and url"})
+	}
+
+	// Note that internalJWK.jwk could be a jwk, or a jwks with one or many entries
+	exit(&jwxCliError{reason: "Note implemented"}) // TODO: Generate jwk first
 }

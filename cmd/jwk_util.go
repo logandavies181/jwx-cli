@@ -12,7 +12,7 @@ import (
         //"github.com/lestrrat-go/jwx/jwt"
 )
 
-type internalJwk struct {
+type internalJWK struct {
 	jwk jwk.Key
 }
 

@@ -36,7 +36,7 @@ func init() {
 }
 
 func jwtGenerateMain() {
-	tok := internalJwt{unsigned: jwt.New()}
+	tok := internalJWT{unsigned: jwt.New()}
 
 	for k, v := range attr {
 		tok.unsigned.Set(k, v)
@@ -56,7 +56,7 @@ func jwtGenerateMain() {
 		}
 	}
 
-	err := tok.writeJwt()
+	err := tok.writeJWT()
 	if err != nil {
 		exit(err)
 	}

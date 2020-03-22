@@ -18,7 +18,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
-type internalJwt struct {
+type internalJWT struct {
 	unsigned *jwt.Token
 	signed   []byte
 }
@@ -41,7 +41,7 @@ func (j *jwxCliError) Error() string {
 	return fmt.Sprintln(j.reason)
 }
 
-func (j *internalJwt) writeJwt() error {
+func (j *internalJWT) writeJWT() error {
 
 	// Check output filename
 	var printFile *os.File
@@ -73,7 +73,7 @@ func (j *internalJwt) writeJwt() error {
 	return &jwxCliError{reason: "Error writing JWT"}
 }
 
-func (j *internalJwt) sign(k *jwxCliKey) error {
+func (j *internalJWT) sign(k *jwxCliKey) error {
 	if j.signed != nil {
 		return &jwxCliError{reason: "Internal error: JWT is alread signed"}
 	}
