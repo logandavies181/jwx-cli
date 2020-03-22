@@ -17,6 +17,7 @@ var (
 	outputFile string
 	decode     bool
 
+	jwtFile string
 	jwkFile string
 	jwkURL  string
 )
@@ -56,8 +57,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&outputFile, "out", "o", "", "File to output to. Default STDOUT")
 	rootCmd.PersistentFlags().BoolVarP(&decode, "decode", "d", false, "Decode printed JWTs. Default false")
 
-	rootCmd.Flags().StringVarP(&jwkFile, "file", "f", "", "Filename to read JWK from")
-	rootCmd.Flags().StringVarP(&jwkURL, "url", "u", "", "HTTP address to read JWK from")
+	rootCmd.PersistentFlags().StringVarP(&jwtFile, "jwt-file", "", "", "Filename to read JWT from")
+	rootCmd.PersistentFlags().StringVarP(&jwkFile, "jwk-file", "", "", "Filename to read JWK from")
+	rootCmd.PersistentFlags().StringVarP(&jwkURL, "url", "u", "", "HTTP address to read JWK from")
 	//verifyCmd.Flags().BoolVarP(&isJWKS, "jwks", "", false, "Whether the retrieved JWK is a JWKS")
 
 }

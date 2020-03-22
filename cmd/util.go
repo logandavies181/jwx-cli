@@ -90,6 +90,7 @@ func getKey() (*jwxCliKey, error) {
 	// TODO allow non-pem format
 	if keyFile != "" {
 		keyFileR, err := os.Open(keyFile)
+		defer keyFileR.Close()
 		if err != nil {
 			return nil, err
 		}
@@ -135,3 +136,32 @@ func decodeSignedJWT(buf []byte) string {
 	return fmt.Sprintf("%s\n%s\n%s", jwtParts[0], jwtParts[1], sig)
 
 }
+
+func readFile(filename string) ([]byte, error) {
+	filenameRead, err := os.Open(filename)
+	defer filenameRead.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	dat, err := ioutil.ReadAll(filenameRead)
+	if err != nil {
+		return nil, err
+	}
+	return dat, nil
+}
+
+// might not be useful as jwk.Token doesn't include signature
+/*
+func readJWTFromFile(filename string) (*internalJWT, error) {
+	dat, err := readFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	parsedJWT, err := jwt.ParseBytes(dat)
+	if err != nil {
+		return nil, err
+	}
+	return &internalJWT{}
+}
+*/
