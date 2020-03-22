@@ -1,15 +1,15 @@
 package cmd
 
 import (
-        "encoding/json"
-        "fmt"
-        "io/ioutil"
-        "os"
+	//"encoding/json"
+	//"fmt"
+	//"io/ioutil"
+	//"os"
 
-        //"github.com/lestrrat-go/jwx/jwa"
-        "github.com/lestrrat-go/jwx/jwk"
-        //"github.com/lestrrat-go/jwx/jws"
-        //"github.com/lestrrat-go/jwx/jwt"
+	//"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwk"
+	//"github.com/lestrrat-go/jwx/jws"
+	//"github.com/lestrrat-go/jwx/jwt"
 )
 
 type internalJWK struct {
@@ -17,15 +17,16 @@ type internalJWK struct {
 }
 
 // Get JWK from either file or URL
-func getJWK() (*internalJwk, error) {
-	if url != "" && jwkFile != nil {
-		return nil, &jwxCliError{reason: "URL must be from or from URL. Not both"}
+func getJWK() (*internalJWK, error) {
+	if jwkURL != "" && jwkFile != "" {
+		return nil, &jwxCliError{reason: "JWK must be from file or from URL. Not both"}
 	}
 
-	if url != "" {
+	if jwkURL != "" {
 		return nil, &jwxCliError{reason: "Not implemented"}
 	}
-	if jwkFile := nil {
-		
+	if jwkFile != "" {
+		return nil, &jwxCliError{reason: "Not implemented"}
 	}
+	return nil, &jwxCliError{reason: "Not implemented"}
 }

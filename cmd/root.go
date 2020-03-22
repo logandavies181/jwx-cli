@@ -12,10 +12,13 @@ import (
 var (
 	cfgFile string
 
-	keyFile        string
+	keyFile    string
 	keyLen     int
 	outputFile string
 	decode     bool
+
+	jwkFile string
+	jwkURL  string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -44,20 +47,19 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
+	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jwx-cli.yaml)")
+
+	// our flags here
 	rootCmd.PersistentFlags().StringVarP(&keyFile, "key", "k", "", "Key for signing. Only valid with --sign")
 	rootCmd.PersistentFlags().IntVarP(&keyLen, "len", "l", 2048, "Key length if key is being generated. Only valid with --sign")
 	rootCmd.PersistentFlags().StringVarP(&outputFile, "out", "o", "", "File to output to. Default STDOUT")
 	rootCmd.PersistentFlags().BoolVarP(&decode, "decode", "d", false, "Decode printed JWTs. Default false")
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().StringVarP(&jwkFile, "file", "f", "", "Filename to read JWK from")
+	rootCmd.Flags().StringVarP(&jwkURL, "url", "u", "", "HTTP address to read JWK from")
+	//verifyCmd.Flags().BoolVarP(&isJWKS, "jwks", "", false, "Whether the retrieved JWK is a JWKS")
+
 }
 
 // initConfig reads in config file and ENV variables if set.

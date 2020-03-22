@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	//	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -15,18 +15,8 @@ var verifyCmd = &cobra.Command{
 	},
 }
 
-var (
-	jwkFile string
-	jwkURL string
-	//isJWKS bool
-)
-
 func init() {
 	jwtCmd.AddCommand(verifyCmd)
-
-        verifyCmd.Flags().StringVarP(&jwkFile, "file", "f", "", "Filename to read JWK from")
-        verifyCmd.Flags().StringVarP(&jwkURL, "url", "u", "", "HTTP address to read JWK from")
-        //verifyCmd.Flags().BoolVarP(&isJWKS, "jwks", "", false, "Whether the retrieved JWK is a JWKS")
 }
 
 func jwtVerifyMain() {

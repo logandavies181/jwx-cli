@@ -5,9 +5,9 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
-	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -23,7 +23,7 @@ type internalJWT struct {
 	signed   []byte
 }
 
-type jwtCliKey struct {
+type jwxCliKey struct {
 	privateKey crypto.PrivateKey
 	alg        jwa.SignatureAlgorithm
 }
@@ -109,7 +109,7 @@ func getKey() (*jwxCliKey, error) {
 		}
 
 		// TODO don't assume RSA
-		return &jwxCliKey{ privateKey: privateKey, alg: jwa.RS512 }, nil
+		return &jwxCliKey{privateKey: privateKey, alg: jwa.RS512}, nil
 
 	}
 	generatedKey, err := rsa.GenerateKey(rand.Reader, keyLen)

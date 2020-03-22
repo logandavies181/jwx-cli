@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	generateCmd = &cobra.Command{
+	jwtGenerateCmd = &cobra.Command{
 		Use:   "generate",
 		Short: "Generate a jwt",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -29,10 +29,10 @@ var (
 )
 
 func init() {
-	jwtCmd.AddCommand(generateCmd)
+	jwtCmd.AddCommand(jwtGenerateCmd)
 
-	generateCmd.Flags().StringToStringVarP(&attr, "attr", "a", make(map[string]string), "List of key-value pairs to add to payload e.g. 'sub=foo,iss=bar'")
-	generateCmd.Flags().BoolVarP(&sign, "sign", "s", true, "Sign the payload or not")
+	jwtGenerateCmd.Flags().StringToStringVarP(&attr, "attr", "a", make(map[string]string), "List of key-value pairs to add to payload e.g. 'sub=foo,iss=bar'")
+	jwtGenerateCmd.Flags().BoolVarP(&sign, "sign", "s", true, "Sign the payload or not")
 }
 
 func jwtGenerateMain() {
