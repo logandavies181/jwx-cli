@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"encoding/pem"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,7 +28,7 @@ type jwtCliKey struct {
 	alg        jwa.SignatureAlgorithm
 }
 
-type jwtCliError struct {
+type jwxCliError struct {
 	reason string
 }
 
@@ -36,7 +37,7 @@ func exit(e error) {
 	os.Exit(1)
 }
 
-func (j *jwtCliError) Error() string {
+func (j *jwxCliError) Error() string {
 	return fmt.Sprintln(j.reason)
 }
 
@@ -48,7 +49,7 @@ func (j *internalJwt) writeJwt() error {
 		printFilePtr, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 		defer printFilePtr.Close()
 		if err != nil {
-			return &jwtCliError{reason: fmt.Sprintln(err)}
+			return &jwxCliError{reason: fmt.Sprintln(err)}
 		}
 		printFile = printFilePtr
 	} else {
@@ -69,50 +70,53 @@ func (j *internalJwt) writeJwt() error {
 		fmt.Fprintln(printFile, string(jsonByte))
 		return nil
 	}
-	return &jwtCliError{reason: "Error writing JWT"}
+	return &jwxCliError{reason: "Error writing JWT"}
 }
 
-func (j *internalJwt) sign(k *jwtCliKey) error {
+func (j *internalJwt) sign(k *jwxCliKey) error {
 	if j.signed != nil {
-		return &jwtCliError{reason: "Internal error: JWT is alread signed"}
+		return &jwxCliError{reason: "Internal error: JWT is alread signed"}
 	}
 	signed, err := j.unsigned.Sign(k.alg, k.privateKey)
 	if err != nil {
-		return &jwtCliError{reason: fmt.Sprintln(err)}
+		return &jwxCliError{reason: fmt.Sprintln(err)}
 	}
 	j.signed = signed
 	return nil
 }
 
 // Gets the key from the filesystem or generates one
-func getKey() (*jwtCliKey, error) {
+func getKey() (*jwxCliKey, error) {
 	// TODO allow non-pem format
-	if key != "" {
-		keyFile, err := os.Open(key)
+	if keyFile != "" {
+		keyFileR, err := os.Open(keyFile)
 		if err != nil {
 			return nil, err
 		}
-		dat, err := ioutil.ReadAll(keyFile)
+		dat, err := ioutil.ReadAll(keyFileR)
 		if err != nil {
 			return nil, err
 		}
 
 		keyBlock, _ := pem.Decode(dat)
 		if keyBlock == nil { // TODO: check that it's not a pubkey
-			return nil, &jwtCliError{reason: "No valid private key found in PEM"}
+			return nil, &jwxCliError{reason: "No valid private key found in PEM"}
 		}
-		//TODO TODO TODO parse x509
-		privateKey, err := x509.Parse
+
+		privateKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+		if err != nil {
+			return nil, err
+		}
 
 		// TODO don't assume RSA
-		return &jwtCliKey{ privateKey: keyBlock.Bytes, alg: jwa.RS512 }, nil
+		return &jwxCliKey{ privateKey: privateKey, alg: jwa.RS512 }, nil
 
 	}
 	generatedKey, err := rsa.GenerateKey(rand.Reader, keyLen)
 	if err != nil {
 		return nil, err
 	}
-	return &jwtCliKey{privateKey: generatedKey, alg: jwa.RS256}, nil
+	return &jwxCliKey{privateKey: generatedKey, alg: jwa.RS256}, nil
 }
 
 func decodeSignedJWT(buf []byte) string {

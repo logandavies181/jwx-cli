@@ -61,39 +61,3 @@ func jwtGenerateMain() {
 		exit(err)
 	}
 }
-
-/*
-func signGeneratedJWT(tok *jwt.Token) {
-	var payload []byte
-	if key == "" {
-		// We assume RSA here. Users can generate their own key if they want a different one
-		privKey, err := rsa.GenerateKey(rand.Reader, keyLen)
-		if err != nil {
-			panic(fmt.Sprintf("failed to generate private key: %s\n", err))
-		}
-		payload, err = tok.Sign(jwa.RS256, privKey)
-		if err != nil {
-			panic(fmt.Sprintf("failed to generate signed payload: %s\n", err))
-		}
-	}
-	// Logic for user provided key here
-
-	// Check output filename
-	var printFile *os.File
-	if outputFile != "" {
-		printFilePtr, err := os.OpenFile(outputFile, os.O_RDWR|os.O_CREATE, 0644)
-		if err != nil {
-			panic(err)
-		}
-		printFile = printFilePtr
-	} else {
-		printFile = os.Stdout
-	}
-
-	if decode {
-		decodedJWT := decodeSignedJWT(payload)
-		fmt.Fprintln(printFile, decodedJWT)
-	} else {
-		fmt.Fprintln(printFile, string(payload))
-	}
-}*/

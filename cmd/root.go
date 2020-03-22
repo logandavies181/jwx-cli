@@ -12,7 +12,7 @@ import (
 var (
 	cfgFile string
 
-	key        string
+	keyFile        string
 	keyLen     int
 	outputFile string
 	decode     bool
@@ -50,7 +50,7 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jwx-cli.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&key, "key", "k", "", "Key for signing. Only valid with --sign")
+	rootCmd.PersistentFlags().StringVarP(&keyFile, "key", "k", "", "Key for signing. Only valid with --sign")
 	rootCmd.PersistentFlags().IntVarP(&keyLen, "len", "l", 2048, "Key length if key is being generated. Only valid with --sign")
 	rootCmd.PersistentFlags().StringVarP(&outputFile, "out", "o", "", "File to output to. Default STDOUT")
 	rootCmd.PersistentFlags().BoolVarP(&decode, "decode", "d", false, "Decode printed JWTs. Default false")
