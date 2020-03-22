@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"bytes"
-	"crypto"
+//	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -24,9 +24,12 @@ type internalJWT struct {
 }
 
 type jwxCliKey struct {
-	privateKey crypto.PrivateKey
+	Key cryptoKey
 	alg        jwa.SignatureAlgorithm
 }
+
+// Should hopefully be crypto.PrivateKey or crypto.PublicKey
+type cryptoKey interface{}
 
 type jwxCliError struct {
 	reason string
@@ -77,7 +80,7 @@ func (j *internalJWT) sign(k *jwxCliKey) error {
 	if j.signed != nil {
 		return &jwxCliError{reason: "Internal error: JWT is alread signed"}
 	}
-	signed, err := j.unsigned.Sign(k.alg, k.privateKey)
+	signed, err := j.unsigned.Sign(k.alg, k.Key)
 	if err != nil {
 		return &jwxCliError{reason: fmt.Sprintln(err)}
 	}
@@ -100,24 +103,38 @@ func getKey() (*jwxCliKey, error) {
 		}
 
 		keyBlock, _ := pem.Decode(dat)
-		if keyBlock == nil { // TODO: check that it's not a pubkey
+		if keyBlock == nil { 
 			return nil, &jwxCliError{reason: "No valid private key found in PEM"}
 		}
-
-		privateKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
-		if err != nil {
-			return nil, err
+		fmt.Println(keyBlock.Type)
+		var pemKey cryptoKey
+		if keyBlock.Type == "RSA PRIVATE KEY" {
+			privateKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+			if err != nil {
+				return nil, err
+			}
+			pemKey = privateKey
+		} else if keyBlock.Type == "PUBLIC KEY" {
+			fmt.Println("public")
+			publicKey, err := x509.ParsePKIXPublicKey(keyBlock.Bytes)
+			if err != nil {
+				fmt.Println("failed pub")
+				return nil, err
+			}
+			pemKey = publicKey
+		} else {
+			return nil, &jwxCliError{reason: "Failed to parse key file"}
 		}
 
 		// TODO don't assume RSA
-		return &jwxCliKey{privateKey: privateKey, alg: jwa.RS512}, nil
+		return &jwxCliKey{Key: pemKey, alg: jwa.RS512}, nil
 
 	}
 	generatedKey, err := rsa.GenerateKey(rand.Reader, keyLen)
 	if err != nil {
 		return nil, err
 	}
-	return &jwxCliKey{privateKey: generatedKey, alg: jwa.RS256}, nil
+	return &jwxCliKey{Key: generatedKey, alg: jwa.RS512}, nil
 }
 
 func decodeSignedJWT(buf []byte) string {

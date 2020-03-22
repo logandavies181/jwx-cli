@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"crypto"
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/spf13/cobra"
@@ -24,22 +25,51 @@ func init() {
 func jwkGenerateMain() {
 	// TODO: allow reading from private key
 
-	privateKey, err := getKey()
+	key, err := getKey()
 	if err != nil {
 		exit(err)
 	}
+	fmt.Println("got key")
+	// TODO tidy up switches
+	var jwkKeyInterface jwk.Key
+	switch v := key.Key.(type){
+	case crypto.PrivateKey:
+		jwkKeyInterface, _ = jwk.New(v)
+		if err != nil {
+			exit(err)
+		}
+	case crypto.PublicKey:
+		jwkKeyInterface, _ = jwk.New(v)
+		if err != nil {
+			exit(err)
+		}
+	default: 
+		exit(&jwxCliError{reason: fmt.Sprintln("Key type not found ", v)})
+	}
 
-	jwkKeyInterface, err := jwk.New(privateKey.privateKey)
+
+//	jwkKeyInterface, err := jwk.New(&key.Key)
 	if err != nil {
 		exit(err)
 	}
+	fmt.Println("debug near end")
+//	jwkKey := jwkKeyInterface.(*jwk.RSAPrivateKey)
+	switch v := jwkKeyInterface.(type) {
+	case *jwk.RSAPrivateKey:
+		jwkJSON, err := v.MarshalJSON()
+		if err != nil {
+			exit(err)
+		}
 
-	jwkKey := jwkKeyInterface.(*jwk.RSAPrivateKey)
+		fmt.Println(string(jwkJSON))
+	case *jwk.RSAPublicKey:
+		jwkJSON, err := v.MarshalJSON()
+		if err != nil {
+			exit(err)
+		}
 
-	jwkJSON, err := jwkKey.MarshalJSON()
-	if err != nil {
-		exit(err)
+		fmt.Println(string(jwkJSON))
+	default:
+		fmt.Println("error")
 	}
-
-	fmt.Println(string(jwkJSON))
 }
