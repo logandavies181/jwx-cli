@@ -5,9 +5,9 @@ import (
 	"context"
 	"crypto"
 	"crypto/x509"
-	"errors"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -19,8 +19,8 @@ import (
 type cryptoKey interface{}
 
 const (
-	PRIVATE_KEY_HEADER = "RSA PRIVATE KEY" 
-	PUBLIC_KEY_HEADER = "PUBLIC KEY" 
+	PRIVATE_KEY_HEADER = "RSA PRIVATE KEY"
+	PUBLIC_KEY_HEADER  = "PUBLIC KEY"
 )
 
 // generateCmd represents the generate command
@@ -29,8 +29,6 @@ var jwkGenerateCmd = &cobra.Command{
 	Short: "Generate a JWK from a PEM Key file",
 	RunE:  jwkGenerate,
 }
-
-
 
 func init() {
 	jwkCmd.AddCommand(jwkGenerateCmd)
@@ -43,13 +41,13 @@ func jwkGenerate(_ *cobra.Command, _ []string) error {
 	}
 
 	var jwkKeyInterface jwk.Key
-	switch v := key.(type){
+	switch v := key.(type) {
 	case crypto.PrivateKey:
 		jwkKeyInterface, err = jwk.New(v)
 
 	case crypto.PublicKey:
 		jwkKeyInterface, err = jwk.New(v)
-	default: 
+	default:
 		return errors.New("Could not determine key type")
 	}
 	// Check the err from the switch statement
@@ -58,20 +56,20 @@ func jwkGenerate(_ *cobra.Command, _ []string) error {
 	}
 
 	/*
-	// We technically don't know the type of the returned key until we use a switch
-	var jwkJSON []byte
-	switch v := jwkKeyInterface.(type) {
-	case jwk.RSAPrivateKey:
-		jwkJSON, err = v.MarshalJSON()
-	case jwk.RSAPublicKey:
-		jwkJSON, err = v.MarshalJSON()
-	default:
-		return errors.New("Unexpected error with generated JWK")
-	}
-	// Check the err from the switch statement
-	if err != nil {
-		return err
-	}
+		// We technically don't know the type of the returned key until we use a switch
+		var jwkJSON []byte
+		switch v := jwkKeyInterface.(type) {
+		case jwk.RSAPrivateKey:
+			jwkJSON, err = v.MarshalJSON()
+		case jwk.RSAPublicKey:
+			jwkJSON, err = v.MarshalJSON()
+		default:
+			return errors.New("Unexpected error with generated JWK")
+		}
+		// Check the err from the switch statement
+		if err != nil {
+			return err
+		}
 	*/
 	m, err := jwkKeyInterface.AsMap(context.TODO())
 	if err != nil {
@@ -87,7 +85,7 @@ func jwkGenerate(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func getKey() (cryptoKey, error){
+func getKey() (cryptoKey, error) {
 	// Check opt and read file
 	if keyFile == "" {
 		return nil, errors.New("Must supply a key file")
@@ -99,7 +97,7 @@ func getKey() (cryptoKey, error){
 
 	// Parse pem data
 	keyBlock, _ := pem.Decode(keyDat)
-	if keyBlock == nil { 
+	if keyBlock == nil {
 		return nil, errors.New("No valid private key found in PEM")
 	}
 	var pemKey cryptoKey

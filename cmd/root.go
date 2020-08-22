@@ -45,4 +45,3 @@ var jwkCmd = &cobra.Command{
 	Use:   "jwk",
 	Short: "Parent command for jwk specific actions",
 }
-
