@@ -2,10 +2,13 @@ package cmd
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/rsa"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -49,6 +52,7 @@ func init() {
 	jwtGenerateCmd.Flags().StringVarP(&sub, "sub", "", "", "Subject")
 
 	jwtGenerateCmd.Flags().StringVarP(&algorithm, "alg", "", "", "JWA algorithm to sign with")
+	jwtGenerateCmd.Flags().BoolVarP(&symmetric, "symmetric-key", "", false, "Indicates the key is a symmetric key")
 	jwtGenerateCmd.Flags().BoolVarP(&sign, "sign", "s", false, "Whether or not to sign the generated JWT")
 }
 
@@ -122,19 +126,35 @@ func printUnsignedJWT(token jwt.Token) error {
 }
 
 func signJWT(token jwt.Token) ([]byte, error) {
+	// TODO: allow using jwk to sign
 	key, err := getKey()
 	if err != nil {
 		return nil, err
 	}
 
+	allowedAlgs, algType, err := checkAlgsForKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	algOk := false
+	for _, alg := range allowedAlgs {
+		if alg == algorithm {
+			algOk = true
+		}
+	}
+	if !algOk {
+		return nil, errors.New(fmt.Sprintf("You must supply a valid alg for your key. Valid algs for %v are %v", algType, strings.Join(allowedAlgs, ", ")))
+	}
 	// TODO: check the key type and return valid algs
 	if algorithm == "" {
 		return nil, errors.New("Must supply alg to sign with")
 	}
 
 	// TODO!! implement checkAlgsForKey so we can check that the alg is right
-	jwalg := jwa.RS512
-	signedBytes, err := jwt.Sign(token, jwalg, key)
+
+	// TODO: finish correlating alg input to real alg
+	signedBytes, err := jwt.Sign(token, jwa.RS256, key)
 	if err != nil {
 		return nil, err
 	}
@@ -150,20 +170,35 @@ func setWrapper(key string, value interface{}, token jwt.Token) {
 	}
 }
 
-func checkAlgsForJWK(key jwk.Key) ([]string, error) {
+func checkAlgsForJWK(key jwk.Key) ([]string, string, error) {
 	switch key.KeyType() {
 	case jwa.EC:
-		return ecAlgs, nil
+		return ecAlgs, "ECDSA", nil
 	case jwa.OctetSeq:
-		return octetAlgs, nil
+		return octetAlgs, "Symmetric", nil
 	case jwa.RSA:
-		return rsaAlgs, nil
+		return rsaAlgs, "RSA", nil
 	default:
-		return nil, errors.New("Invalid key type")
+		return nil, "", errors.New("Invalid key type")
 	}
 }
 
 // TODO!!
-func checkAlgsForKey(key cryptoKey) (error, []string) {
-	return nil, append(append(rsaAlgs, ecAlgs...), octetAlgs...)
+func checkAlgsForKey(key cryptoKey) ([]string, string, error) {
+	switch key.(type) {
+	case rsa.PublicKey:
+		return rsaAlgs, "RSA", nil
+	case rsa.PrivateKey:
+		return rsaAlgs, "RSA", nil
+	case ecdsa.PrivateKey:
+		return ecAlgs, "ECDSA", nil
+	case ecdsa.PublicKey:
+		return ecAlgs, "ECDSA", nil
+	default:
+		if symmetric {
+			return octetAlgs, "Symmetric", nil
+		} else {
+			return nil, "", errors.New("Could not determine algs for key")
+		}
+	}
 }

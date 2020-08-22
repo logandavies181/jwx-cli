@@ -19,8 +19,10 @@ import (
 type cryptoKey interface{}
 
 const (
-	PRIVATE_KEY_HEADER = "RSA PRIVATE KEY"
-	PUBLIC_KEY_HEADER  = "PUBLIC KEY"
+	EC_PRIVATE_KEY_HEADER  = "EC PRIVATE KEY"
+	PKCS8_HEADER           = "PRIVATE KEY"
+	PUBLIC_KEY_HEADER      = "PUBLIC KEY"
+	RSA_PRIVATE_KEY_HEADER = "RSA PRIVATE KEY"
 )
 
 // generateCmd represents the generate command
@@ -32,6 +34,8 @@ var jwkGenerateCmd = &cobra.Command{
 
 func init() {
 	jwkCmd.AddCommand(jwkGenerateCmd)
+
+	jwkGenerateCmd.Flags().BoolVarP(&symmetric, "symmetric-key", "", false, "Indicates the key is a symmetric key")
 }
 
 func jwkGenerate(_ *cobra.Command, _ []string) error {
@@ -55,22 +59,6 @@ func jwkGenerate(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	/*
-		// We technically don't know the type of the returned key until we use a switch
-		var jwkJSON []byte
-		switch v := jwkKeyInterface.(type) {
-		case jwk.RSAPrivateKey:
-			jwkJSON, err = v.MarshalJSON()
-		case jwk.RSAPublicKey:
-			jwkJSON, err = v.MarshalJSON()
-		default:
-			return errors.New("Unexpected error with generated JWK")
-		}
-		// Check the err from the switch statement
-		if err != nil {
-			return err
-		}
-	*/
 	m, err := jwkKeyInterface.AsMap(context.TODO())
 	if err != nil {
 		return err
@@ -98,24 +86,33 @@ func getKey() (cryptoKey, error) {
 	// Parse pem data
 	keyBlock, _ := pem.Decode(keyDat)
 	if keyBlock == nil {
-		return nil, errors.New("No valid private key found in PEM")
+		if !symmetric {
+			return nil, errors.New("No valid key found in PEM")
+		} else {
+			// Warning! This includes \n at the end of file.
+			// TODO: check if this is normal
+			return keyDat, nil
+		}
 	}
-	var pemKey cryptoKey
-	if keyBlock.Type == PRIVATE_KEY_HEADER {
-		privateKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		pemKey = privateKey
-	} else if keyBlock.Type == PUBLIC_KEY_HEADER {
-		publicKey, err := x509.ParsePKIXPublicKey(keyBlock.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		pemKey = publicKey
-	} else {
+
+	var key cryptoKey
+	switch keyBlock.Type {
+	// TODO: Add DSA!!
+	case EC_PRIVATE_KEY_HEADER:
+		key, err = x509.ParseECPrivateKey(keyBlock.Bytes)
+	case PKCS8_HEADER:
+		key, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+	case PUBLIC_KEY_HEADER:
+		key, err = x509.ParsePKIXPublicKey(keyBlock.Bytes)
+	case RSA_PRIVATE_KEY_HEADER:
+		key, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+	default:
 		return nil, errors.New("Failed to parse key file")
 	}
 
-	return pemKey, nil
+	if err != nil {
+		return nil, err
+	}
+
+	return key, nil
 }
