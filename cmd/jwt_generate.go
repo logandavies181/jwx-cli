@@ -3,8 +3,10 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/cobra"
@@ -101,6 +103,11 @@ func printUnsignedJWT(token jwt.Token) error {
 		return err
 	}
 
+	m, err = timeFieldsToUnix(m)
+	if err != nil {
+		return err
+	}
+
 	jwtJSON, err := json.Marshal(m)
 	if err != nil {
 		return err
@@ -118,4 +125,32 @@ func setWrapper(key string, value interface{}, token jwt.Token) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
+}
+
+// Expect case string when reading JSON, case time.Time while generating a JWT, 
+// and case nil when the field doesn't exist
+func timeFieldsToUnix(m map[string]interface{}) (map[string]interface{}, error) {
+
+	for _, field := range []string{"exp", "iat", "nbf"} {
+		switch v := m[field].(type) {
+		case string:
+			unixTime, err := time.Parse("2006-01-02T15:04:05Z", v)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("Unable to parse %v, value %v",field, v))
+			} 
+			m[field] = unixTime
+		case float64:
+			// do nothing. this is the type that it probably should have been 
+			// in the first place
+			// TODO: test lol
+		case nil:
+			// no nothing. No value found for key
+		case time.Time:
+			m[field] = v.Unix()
+		default:
+			return nil, errors.New(fmt.Sprintf("Unable to parse value in token:\nvalue: %v\ntype: %T", v, v))
+		}
+	}
+
+	return m, nil
 }

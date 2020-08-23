@@ -55,10 +55,23 @@ func jwtSign(_ *cobra.Command, _ []string) error {
 	// empty token copied from jwt.parse implementation..
 	// FIXME: unmarshal won't work for the timedate fields as they need to be
 	// changed into epoch representation to work with jwt.Token
-	token := jwt.New()
-	err = json.Unmarshal(jwtDat, token)
+	var tokenFromMap map[string]interface{}
+	err = json.Unmarshal(jwtDat, &tokenFromMap)
 	if err != nil {
 		return err
+	}
+
+	tokenFromMap, err = timeFieldsToUnix(tokenFromMap) 
+	if err != nil {
+		return err
+	}
+
+	token := jwt.New()
+	for k, v := range tokenFromMap {
+		err := token.Set(k, v)
+		if err != nil {
+			return err
+		}
 	}
 
 	signedBytes, err := signJWT(token)
@@ -128,3 +141,4 @@ func checkAlgsForKey(key cryptoKey) ([]string, string, error) {
 		}
 	}
 }
+
