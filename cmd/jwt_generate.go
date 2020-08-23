@@ -2,24 +2,12 @@ package cmd
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/rsa"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/cobra"
-)
-
-var (
-	octetAlgs = []string{"HS256", "HS383", "HS512"}
-	ecAlgs    = []string{"ES256", "ES384", "ES512"}
-	rsaAlgs   = []string{"PS256", "PS384", "PS512", "RS256", "RS384", "RS512"}
 )
 
 var (
@@ -34,8 +22,6 @@ var (
 	aud                          []string
 	exp, iat, iss, jti, nbf, sub string
 	sign                         bool
-	noSig                        bool
-	algorithm                    string
 )
 
 func init() {
@@ -52,7 +38,7 @@ func init() {
 	jwtGenerateCmd.Flags().StringVarP(&sub, "sub", "", "", "Subject")
 
 	jwtGenerateCmd.Flags().StringVarP(&algorithm, "alg", "", "", "JWA algorithm to sign with")
-	jwtGenerateCmd.Flags().BoolVarP(&symmetric, "symmetric-key", "", false, "Indicates the key is a symmetric key")
+	jwtGenerateCmd.Flags().BoolVarP(&symmetric, "symmetric", "", false, "Indicates the key is a symmetric key")
 	jwtGenerateCmd.Flags().BoolVarP(&sign, "sign", "s", false, "Whether or not to sign the generated JWT")
 }
 
@@ -125,80 +111,11 @@ func printUnsignedJWT(token jwt.Token) error {
 	return nil
 }
 
-func signJWT(token jwt.Token) ([]byte, error) {
-	// TODO: allow using jwk to sign
-	key, err := getKey()
-	if err != nil {
-		return nil, err
-	}
-
-	allowedAlgs, algType, err := checkAlgsForKey(key)
-	if err != nil {
-		return nil, err
-	}
-
-	algOk := false
-	for _, alg := range allowedAlgs {
-		if alg == algorithm {
-			algOk = true
-		}
-	}
-	if !algOk {
-		return nil, errors.New(fmt.Sprintf("You must supply a valid alg for your key. Valid algs for %v are %v", algType, strings.Join(allowedAlgs, ", ")))
-	}
-	// TODO: check the key type and return valid algs
-	if algorithm == "" {
-		return nil, errors.New("Must supply alg to sign with")
-	}
-
-	// TODO!! implement checkAlgsForKey so we can check that the alg is right
-
-	// TODO: finish correlating alg input to real alg
-	signedBytes, err := jwt.Sign(token, jwa.RS256, key)
-	if err != nil {
-		return nil, err
-	}
-	return signedBytes, nil
-}
-
 // This func wraps the token.Set call to print errors to stderr without failing
 // TODO: allow silence
 func setWrapper(key string, value interface{}, token jwt.Token) {
 	err := token.Set(key, value)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-	}
-}
-
-func checkAlgsForJWK(key jwk.Key) ([]string, string, error) {
-	switch key.KeyType() {
-	case jwa.EC:
-		return ecAlgs, "ECDSA", nil
-	case jwa.OctetSeq:
-		return octetAlgs, "Symmetric", nil
-	case jwa.RSA:
-		return rsaAlgs, "RSA", nil
-	default:
-		return nil, "", errors.New("Invalid key type")
-	}
-}
-
-// TODO!!
-func checkAlgsForKey(key cryptoKey) ([]string, string, error) {
-	switch key.(type) {
-	case rsa.PublicKey:
-		return rsaAlgs, "RSA", nil
-	case rsa.PrivateKey:
-		return rsaAlgs, "RSA", nil
-	case ecdsa.PrivateKey:
-		return ecAlgs, "ECDSA", nil
-	case ecdsa.PublicKey:
-		return ecAlgs, "ECDSA", nil
-	default:
-		if symmetric {
-			return octetAlgs, "Symmetric", nil
-		} else {
-			return nil, "", errors.New("Could not determine algs for key")
-		}
 	}
 }

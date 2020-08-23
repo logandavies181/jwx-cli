@@ -11,10 +11,6 @@ var (
 	jwtFile, jwkFile, keyFile string
 )
 
-var (
-	symmetric bool
-)
-
 var rootCmd = &cobra.Command{
 	Use:           "jwx-cli",
 	Short:         "A tool for working with jose technologies on the command line",
