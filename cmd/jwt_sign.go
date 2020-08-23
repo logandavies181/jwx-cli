@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto/ecdsa"
 	"crypto/rsa"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -45,23 +46,17 @@ func init() {
 }
 
 func jwtSign(_ *cobra.Command, _ []string) error {
-	JwtDat, err := ioutil.ReadFile(jwtFile)
+	jwtDat, err := ioutil.ReadFile(jwtFile)
 	if err != nil {
 		return err
 	}
 
-	/*
-	m := make(map[string]interface{})
-	err = json.Unmarshal(jwtDat, *m)
-	if err != nil {
-		fmt.Println("erroring")
-		return err
-	}
-	fmt.Println("printing m")
-	fmt.Println(m)
-	*/
-
-	token, err := jwt.ParseString(string(JwtDat))
+	// Possible bug with jwt.Parse on an unsigned json. Unmarshalling into
+	// empty token copied from jwt.parse implementation..
+	// FIXME: unmarshal won't work for the timedate fields as they need to be
+	// changed into epoch representation to work with jwt.Token
+	token := jwt.New()
+	err = json.Unmarshal(jwtDat, token)
 	if err != nil {
 		return err
 	}
