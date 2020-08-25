@@ -1,2 +1,5 @@
 *jwx-cli
 *.pem
+*.der
+*.json
+*.b64

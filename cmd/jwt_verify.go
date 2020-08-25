@@ -32,6 +32,9 @@ func jwtVerify(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
+	// TODO: add options for additional verification i.e. exp, sub, claims, etc
+	// at the moment it's only signature verification and the rest is the user to eyeball
+
 	// Prefer jwkFile over keyFile
 	if jwkFile != "" {
 		jwkFd, err := os.Open(jwkFile)
@@ -47,7 +50,7 @@ func jwtVerify(_ *cobra.Command, _ []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("success")
+		fmt.Println("JWT verified ok")
 	}
 
 	if keyFile != "" {

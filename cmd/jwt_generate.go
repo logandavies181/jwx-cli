@@ -12,6 +12,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// So jwk.Key and jwt.Token can both use setWrapper
+type getterSetter interface {
+	Get(string) (interface{}, bool)
+	Set(string, interface{}) error
+}
+
 var (
 	jwtGenerateCmd = &cobra.Command{
 		Use:     "generate",
@@ -120,8 +126,8 @@ func printUnsignedJWT(token jwt.Token) error {
 
 // This func wraps the token.Set call to print errors to stderr without failing
 // TODO: allow silence
-func setWrapper(key string, value interface{}, token jwt.Token) {
-	err := token.Set(key, value)
+func setWrapper(key string, value interface{}, target getterSetter) {
+	err := target.Set(key, value)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
