@@ -3,3 +3,4 @@
 *.der
 *.json
 *.b64
+*.jwk

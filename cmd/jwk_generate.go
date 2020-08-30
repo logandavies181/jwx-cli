@@ -34,8 +34,9 @@ var (
 	}
 
 	// TODO: these probably aren't all strings
-	use, alg, kid, x5u, x5c, x5t, x5ts256 string
-	key_ops []string
+	use, alg, kid, x5u, x5t, x5ts256 string
+	x5c                              []string
+	key_ops                          []string
 )
 
 func init() {
@@ -44,11 +45,11 @@ func init() {
 	jwkGenerateCmd.Flags().StringToStringVarP(&attr, "attr", "a", make(map[string]string), "List of arbitrary key-value pairs to add to the JWK e.g. 'sub=foo,iss=bar'")
 
 	jwkGenerateCmd.Flags().StringVarP(&use, "use", "", "", "Key Usage")
-	jwkGenerateCmd.Flags().StringSliceVarP(&key_ops, "ops", "", []string{} , "Key Ops")
+	jwkGenerateCmd.Flags().StringSliceVarP(&key_ops, "ops", "", []string{}, "Key Ops")
 	jwkGenerateCmd.Flags().StringVarP(&alg, "alg", "", "", "Algorithm")
 	jwkGenerateCmd.Flags().StringVarP(&kid, "kid", "", "", "Key ID")
 	jwkGenerateCmd.Flags().StringVarP(&x5u, "x5u", "", "", "X509 URL")
-	jwkGenerateCmd.Flags().StringVarP(&x5c, "x5c", "", "", "X509 Cert Chain")
+	jwkGenerateCmd.Flags().StringSliceVarP(&x5c, "x5c", "", []string{}, "X509 Cert Chain")
 	jwkGenerateCmd.Flags().StringVarP(&x5t, "x5t", "", "", "X509 Thumbprint")
 	jwkGenerateCmd.Flags().StringVarP(&x5ts256, "x5ts256", "", "", "X509 Thumbprint SHA256")
 
@@ -108,18 +109,16 @@ func getKey() (cryptoKey, error) {
 	// Parse pem data
 	keyBlock, _ := pem.Decode(keyDat)
 	if keyBlock == nil {
+		// TODO: do a specific check for symmetric key instead of this
 		if !symmetric {
 			return nil, errors.New("No valid key found in PEM")
 		} else {
-			// Warning! This includes \n at the end of file.
-			// TODO: check if this is normal
 			return keyDat, nil
 		}
 	}
 
 	var key cryptoKey
 	switch keyBlock.Type {
-	// TODO: Add DSA!!
 	case EC_PRIVATE_KEY_HEADER:
 		key, err = x509.ParseECPrivateKey(keyBlock.Bytes)
 	case PKCS8_HEADER:
@@ -160,8 +159,7 @@ func addHeaders(j jwk.Key) (jwk.Key, error) {
 	if x5u != "" {
 		setWrapper("x5u", x5u, j)
 	}
-	// TODO: this should probably be a slice
-	if x5c != "" {
+	if len(x5c) != 0 {
 		setWrapper("x5c", x5c, j)
 	}
 	if x5t != "" {
@@ -173,4 +171,3 @@ func addHeaders(j jwk.Key) (jwk.Key, error) {
 
 	return j, nil
 }
-

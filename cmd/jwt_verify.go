@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/spf13/cobra"
@@ -19,7 +20,7 @@ var verifyCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(verifyCmd)
+	jwtCmd.AddCommand(verifyCmd)
 }
 
 func jwtVerify(_ *cobra.Command, _ []string) error {
@@ -45,7 +46,7 @@ func jwtVerify(_ *cobra.Command, _ []string) error {
 		if err != nil {
 			return err
 		}
-		// TODO: loop over full set of keys
+		// For now we only support single keys
 		_, err = jws.VerifyWithJWK(jwtToVerify, jwkSet.Keys[0])
 		if err != nil {
 			return err
@@ -54,7 +55,29 @@ func jwtVerify(_ *cobra.Command, _ []string) error {
 	}
 
 	if keyFile != "" {
-		fmt.Println("todo!")
+		key, err := getKey()
+		if err != nil {
+			return err
+		}
+
+		// Try all of the valid algs for the type of key
+		algs, _, err := getAlgsForKeyType(key)
+		ok := false
+		for _, alg := range algs {
+			_, err := jws.Verify(jwtToVerify, jwa.SignatureAlgorithm(alg), key)
+			if err == nil {
+				ok = true
+				break
+			} else {
+				fmt.Println(err)
+			}
+		}
+		if ok {
+			fmt.Println("JWT verified ok")
+		} else {
+			return errors.New("Could not verify JWT using supplied key")
+		}
 	}
+
 	return nil
 }
