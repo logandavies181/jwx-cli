@@ -11,6 +11,7 @@ import (
 
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/cobra"
 )
@@ -32,14 +33,29 @@ var (
 	algorithm string
 	noSig     bool // TODO:
 	symmetric bool
+
+	contentType, jwksURL string
+	sigCritical []string
+	jwkHeader bool
 )
 
 func init() {
 	jwtCmd.AddCommand(jwtSignCmd)
 
+	// Signing flags
 	jwtSignCmd.Flags().StringVarP(&algorithm, "alg", "", "", "JWA algorithm to sign with")
 	jwtSignCmd.Flags().StringVarP(&jwtFile, "jwt", "t", "", "JWT file to read from")
 	jwtSignCmd.Flags().BoolVarP(&symmetric, "symmetric", "", false, "Indicates the key is a symmetric key")
+
+	// Sig header flags
+	jwtSignCmd.Flags().BoolVarP(&jwkHeader, "jwk-header", "", false, "Signature header: JWK")
+	jwtSignCmd.Flags().StringVarP(&contentType, "cty", "", "", "Signature header: Content Type")
+	jwtSignCmd.Flags().StringSliceVarP(&sigCritical, "crit", "", []string{}, "Signature header: Critical")
+	jwtSignCmd.Flags().StringVarP(&kid, "kid", "", "", "Signature header: Key ID")
+	jwtSignCmd.Flags().StringVarP(&x5u, "x5u", "", "", "Signature header: X509 URL")
+	jwtSignCmd.Flags().StringSliceVarP(&x5c, "x5c", "", []string{}, "Signature header: X509 Cert Chain")
+	jwtSignCmd.Flags().StringVarP(&x5t, "x5t", "", "", "Signature header: X509 Thumbprint")
+	jwtSignCmd.Flags().StringVarP(&x5ts256, "x5ts256", "", "", "Signature header: X509 Thumbprint SHA256")
 
 	jwtSignCmd.MarkFlagRequired("jwt")
 	jwtSignCmd.MarkFlagRequired("key")
@@ -53,8 +69,6 @@ func jwtSign(_ *cobra.Command, _ []string) error {
 
 	// Possible bug with jwt.Parse on an unsigned json. Unmarshalling into
 	// empty token copied from jwt.parse implementation..
-	// FIXME: unmarshal won't work for the timedate fields as they need to be
-	// changed into epoch representation to work with jwt.Token
 	var tokenFromMap map[string]interface{}
 	err = json.Unmarshal(jwtDat, &tokenFromMap)
 	if err != nil {
@@ -95,7 +109,12 @@ func signJWT(token jwt.Token) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		signedBytes, err := jwt.Sign(token, jwa.SignatureAlgorithm(alg), jwKey)
+		signHeaders := getSignHeaders()
+		if jwkHeader {
+			setWrapper("jwk", jwKey, signHeaders)
+		}
+		signHeaderOptions := jws.WithHeaders(signHeaders)
+		signedBytes, err := jwt.Sign(token, jwa.SignatureAlgorithm(alg), jwKey, signHeaderOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -112,10 +131,13 @@ func signJWT(token jwt.Token) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		signedBytes, err := jwt.Sign(token, jwa.SignatureAlgorithm(alg), key)
+		signHeaders := getSignHeaders()
+		signHeaderOptions := jws.WithHeaders(signHeaders)
+		signedBytes, err := jwt.Sign(token, jwa.SignatureAlgorithm(alg), key, signHeaderOptions)
 		if err != nil {
 			return nil, err
 		}
+
 		return signedBytes, nil
 	}
 
@@ -241,4 +263,35 @@ func getAlgorithm(key interface{}) (string, error) {
 		return "", errors.New(fmt.Sprintf("Could not determine algorithm for type %T", v))
 	}
 	return "", errors.New("Unknown error")
+}
+
+func getSignHeaders() jws.Headers {
+	headers := jws.NewHeaders()
+
+	if contentType != "" {
+		setWrapper("cty", contentType, headers)
+	}
+	if len(sigCritical) != 0 {
+		setWrapper("crit", sigCritical, headers)
+	}
+	if jwksURL != "" {
+		setWrapper("jks", jwksURL, headers)
+	}
+	if kid != "" {
+		setWrapper("kid", kid, headers)
+	}
+	if x5u != "" {
+		setWrapper("x5u", x5u, headers)
+	}
+	if len(x5c) != 0 {
+		setWrapper("x5c", x5c, headers)
+	}
+	if x5t != "" {
+		setWrapper("x5t", x5t, headers)
+	}
+	if x5ts256 != "" {
+		setWrapper("x5t#S256", x5ts256, headers)
+	}
+
+	return headers
 }

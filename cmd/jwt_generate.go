@@ -35,8 +35,10 @@ var (
 func init() {
 	jwtCmd.AddCommand(jwtGenerateCmd)
 
+	// Arbitrary key-value pairs for JWT attributes
 	jwtGenerateCmd.Flags().StringToStringVarP(&attr, "attr", "a", make(map[string]string), "List of key-value pairs to add to payload e.g. 'sub=foo,iss=bar'")
 
+	// JWT standard attribute flags
 	jwtGenerateCmd.Flags().StringSliceVarP(&aud, "aud", "", []string{}, "Audience")
 	jwtGenerateCmd.Flags().StringVarP(&exp, "exp", "", "", "Expiration")
 	jwtGenerateCmd.Flags().StringVarP(&iat, "iat", "", "", "IssuedAt")
@@ -45,6 +47,17 @@ func init() {
 	jwtGenerateCmd.Flags().StringVarP(&nbf, "nbf", "", "", "NotBefore")
 	jwtGenerateCmd.Flags().StringVarP(&sub, "sub", "", "", "Subject")
 
+	// Signing header flags
+	jwtGenerateCmd.Flags().BoolVarP(&jwkHeader, "jwk-header", "", false, "Signature header: JWK")
+	jwtGenerateCmd.Flags().StringVarP(&contentType, "cty", "", "", "Signature header: Content Type")
+	jwtGenerateCmd.Flags().StringSliceVarP(&sigCritical, "crit", "", []string{}, "Signature header: Critical")
+	jwtGenerateCmd.Flags().StringVarP(&kid, "kid", "", "", "Signature header: Key ID")
+	jwtGenerateCmd.Flags().StringVarP(&x5u, "x5u", "", "", "Signature header: X509 URL")
+	jwtGenerateCmd.Flags().StringSliceVarP(&x5c, "x5c", "", []string{}, "Signature header: X509 Cert Chain")
+	jwtGenerateCmd.Flags().StringVarP(&x5t, "x5t", "", "", "Signature header: X509 Thumbprint")
+	jwtGenerateCmd.Flags().StringVarP(&x5ts256, "x5ts256", "", "", "Signature header: X509 Thumbprint SHA256")
+
+	// Signing flags
 	jwtGenerateCmd.Flags().StringVarP(&algorithm, "alg", "", "", "JWA algorithm to sign with")
 	jwtGenerateCmd.Flags().BoolVarP(&symmetric, "symmetric", "", false, "Indicates the key is a symmetric key")
 }
