@@ -1,3 +1,6 @@
-*ignoreme*
 *jwx-cli
-*notmain*
+*.pem
+*.der
+*.json
+*.b64
+*.jwk
